@@ -1,0 +1,71 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    tags:
+      - 'v*'
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      upstream_tag:
+        description: 'Upstream tag to build from (e.g., v1.1.6)'
+        required: false
+        default: 'main'
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine version
+        id: version
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            TAG=${GITHUB_REF#refs/tags/}
+            echo "version=${TAG}" >> $GITHUB_ENV
+            echo "channel=stable" >> $GITHUB_ENV
+          else
+            COMMIT=$(git rev-parse --short HEAD)
+            echo "version=${COMMIT}" >> $GITHUB_ENV
+            echo "channel=dev" >> $GITHUB_ENV
+          fi
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/decypharr:latest
+            ghcr.io/${{ github.repository_owner }}/decypharr:${{ env.version }}
+          build-args: |
+            VERSION=${{ env.version }}
+            CHANNEL=${{ env.channel }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Image digest
+        run: echo "Image pushed successfully to ghcr.io/${{ github.repository_owner }}/decypharr:${{ env.version }}"

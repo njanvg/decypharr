@@ -9,6 +9,7 @@ class DownloadManager {
             arr: document.getElementById('arr'),
             downloadAction: document.getElementById('downloadAction'),
             downloadUncached: document.getElementById('downloadUncached'),
+            skipMultiSeason: document.getElementById('skipMultiSeason'),
             rmTrackerUrls: document.getElementById('rmTrackerUrls'),
             downloadFolder: document.getElementById('downloadFolder'),
             debrid: document.getElementById('debrid'),
@@ -35,6 +36,7 @@ class DownloadManager {
         this.refs.arr.addEventListener('change', () => this.saveOptions());
         this.refs.downloadAction.addEventListener('change', () => this.saveOptions());
         this.refs.downloadUncached.addEventListener('change', () => this.saveOptions());
+        this.refs.skipMultiSeason.addEventListener('change', () => this.saveOptions());
         this.refs.rmTrackerUrls.addEventListener('change', () => this.saveOptions());
         this.refs.downloadFolder.addEventListener('change', () => this.saveOptions());
 
@@ -50,6 +52,7 @@ class DownloadManager {
             category: localStorage.getItem('downloadCategory') || '',
             action: localStorage.getItem('downloadAction') || 'symlink',
             uncached: localStorage.getItem('downloadUncached') === 'true',
+            skipMultiSeason: localStorage.getItem('skipMultiSeason') !== 'false',
             rmTrackerUrls: localStorage.getItem('rmTrackerUrls') === 'true',
             folder: localStorage.getItem('downloadFolder') || this.downloadFolder
         };
@@ -57,6 +60,7 @@ class DownloadManager {
         this.refs.arr.value = savedOptions.category;
         this.refs.downloadAction.value = savedOptions.action;
         this.refs.downloadUncached.checked = savedOptions.uncached;
+        this.refs.skipMultiSeason.checked = savedOptions.skipMultiSeason;
         this.refs.rmTrackerUrls.checked = savedOptions.rmTrackerUrls;
         this.refs.downloadFolder.value = savedOptions.folder;
     }
@@ -65,6 +69,7 @@ class DownloadManager {
         localStorage.setItem('downloadCategory', this.refs.arr.value);
         localStorage.setItem('downloadAction', this.refs.downloadAction.value);
         localStorage.setItem('downloadUncached', this.refs.downloadUncached.checked.toString());
+        localStorage.setItem('skipMultiSeason', this.refs.skipMultiSeason.checked.toString());
 
         // Only save rmTrackerUrls if not disabled (i.e., not forced by config)
         if (!this.refs.rmTrackerUrls.disabled) {
@@ -125,6 +130,7 @@ class DownloadManager {
         formData.append('action', this.refs.downloadAction.value);
         formData.append('downloadUncached', this.refs.downloadUncached.checked);
         formData.append('rmTrackerUrls', this.refs.rmTrackerUrls.checked);
+        formData.append('skipMultiSeason', document.getElementById('skipMultiSeason').checked);
 
         if (this.refs.debrid) {
             formData.append('debrid', this.refs.debrid.value);
