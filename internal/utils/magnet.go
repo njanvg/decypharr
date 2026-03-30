@@ -568,3 +568,78 @@ func bencodeDict(w io.Writer, dict map[string]any) error {
 	_, err := w.Write([]byte("e"))
 	return err
 }
+
+// DownloadTorrentFromCache fetches a .torrent file from public torrent caches using the info hash.
+// It tries multiple cache services and returns the first successful response.
+func DownloadTorrentFromCache(infoHash string) ([]byte, error) {
+	if infoHash == "" {
+		return nil, fmt.Errorf("empty info hash")
+	}
+
+	// Normalize hash (remove any urn:btih: prefix if present)
+	hashLower := strings.ToLower(strings.TrimPrefix(infoHash, "urn:btih:"))
+
+	// List of public torrent cache services to try
+	cacheServices := []string{
+		fmt.Sprintf("https://torrage.com/torrent/%s.torrent", hashLower),
+		fmt.Sprintf("https://torcache.net/torrent/%s.torrent", hashLower),
+		fmt.Sprintf("https://torrage.info/torrent/%s.torrent", hashLower),
+		fmt.Sprintf("https://zoink.ch/torrent/%s.torrent", hashLower),
+		fmt.Sprintf("https://itorrents.org/torrent/%s.torrent", hashLower),
+		fmt.Sprintf("https://btcache.me/torrent/%s.torrent", hashLower),
+	}
+
+	var lastErr error
+	for _, cacheURL := range cacheServices {
+		req, err := http.NewRequest("GET", cacheURL, nil)
+		if err != nil {
+			lastErr = err
+			continue
+		}
+
+		// Set a user-agent to avoid being blocked by some services
+		req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
+
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			lastErr = err
+			continue
+		}
+
+		// Check content type and status code
+		if resp.StatusCode != http.StatusOK {
+			resp.Body.Close()
+			lastErr = fmt.Errorf("cache returned %d", resp.StatusCode)
+			continue
+		}
+
+		contentType := resp.Header.Get("Content-Type")
+		if !strings.Contains(contentType, "application/x-bittorrent") &&
+			!strings.Contains(contentType, "application/octet-stream") {
+			resp.Body.Close()
+			lastErr = fmt.Errorf("unexpected content type: %s", contentType)
+			continue
+		}
+
+		// Read and return the torrent file
+		data, err := io.ReadAll(resp.Body)
+		resp.Body.Close()
+
+		if err != nil {
+			lastErr = err
+			continue
+		}
+
+		if len(data) == 0 {
+			lastErr = fmt.Errorf("empty response from cache")
+			continue
+		}
+
+		return data, nil
+	}
+
+	if lastErr != nil {
+		return nil, fmt.Errorf("failed to download from torrent caches: %w", lastErr)
+	}
+	return nil, fmt.Errorf("no working torrent cache service available")
+}

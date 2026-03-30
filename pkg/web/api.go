@@ -186,16 +186,31 @@ func (wb *Web) handleDownloadTorrent(w http.ResponseWriter, r *http.Request) {
 		contentPath = strings.TrimSpace(torrent.TorrentPath)
 	}
 
-	if contentPath == "" {
-		http.Error(w, "Torrent content path is not available", http.StatusBadRequest)
-		return
-	}
+	var data []byte
+	var err error
 
-	data, err := utils.CreateTorrentFileFromPath(contentPath, torrent.Name, torrent.MagnetUri)
-	if err != nil {
-		wb.logger.Error().Err(err).Str("hash", hash).Msg("Failed to build torrent file")
-		http.Error(w, fmt.Sprintf("Failed to build torrent file: %v", err), http.StatusInternalServerError)
-		return
+	if contentPath != "" {
+		// Build torrent from local content path
+		data, err = utils.CreateTorrentFileFromPath(contentPath, torrent.Name, torrent.MagnetUri)
+		if err != nil {
+			wb.logger.Error().Err(err).Str("hash", hash).Msg("Failed to build torrent file from path")
+			http.Error(w, fmt.Sprintf("Failed to build torrent file: %v", err), http.StatusInternalServerError)
+			return
+		}
+	} else {
+		// Try to download from torrent cache using infohash
+		magnetUri := strings.TrimSpace(torrent.MagnetUri)
+		if magnetUri == "" {
+			http.Error(w, "Torrent content path and magnet URI not available", http.StatusBadRequest)
+			return
+		}
+
+		data, err = utils.DownloadTorrentFromCache(hash)
+		if err != nil {
+			wb.logger.Error().Err(err).Str("hash", hash).Msg("Failed to download torrent from cache")
+			http.Error(w, fmt.Sprintf("Failed to download torrent: %v", err), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	fileName := torrent.Name
