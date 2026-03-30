@@ -81,13 +81,16 @@ class TorrentDashboard {
         if (this.refs.searchInput) {
             console.log('[Dashboard] ✓ searchInput element found, attaching listener');
             const searchHandler = (e) => {
-                console.log('[Dashboard] SEARCH EVENT FIRED:', e.target.value);
-                this.state.searchTerm = e.target.value;
+                const val = (e.target.value || '').trim();
+                console.log('[Dashboard] SEARCH EVENT FIRED:', e.type, val);
+                this.state.searchTerm = val;
                 this.state.currentPage = 1;
                 this.updateUI();
             };
             this.refs.searchInput.addEventListener('input', searchHandler);
-            console.log('[Dashboard] ✓ Search listener attached successfully');
+            this.refs.searchInput.addEventListener('keyup', searchHandler);
+            this.refs.searchInput.addEventListener('change', searchHandler);
+            console.log('[Dashboard] ✓ Search listeners attached successfully');
         } else {
             console.error('[Dashboard] ✗ SEARCHINPUT NOT FOUND! Element is null/undefined');
             console.error('[Dashboard] Available refs:', Object.keys(this.refs));
@@ -360,6 +363,7 @@ class TorrentDashboard {
         const startIndex = (this.state.currentPage - 1) * this.state.itemsPerPage;
         const endIndex = Math.min(startIndex + this.state.itemsPerPage, this.state.filteredTorrents.length);
         const pageItems = this.state.filteredTorrents.slice(startIndex, endIndex);
+        console.log('[Dashboard] renderTorrents: pageItems', pageItems.length, 'of', this.state.filteredTorrents.length);
 
         this.refs.torrentsList.innerHTML = pageItems.map(torrent => this.torrentRowTemplate(torrent)).join('');
     }
@@ -550,7 +554,8 @@ class TorrentDashboard {
     }
 
     toggleEmptyState() {
-        const isEmpty = this.state.torrents.length === 0;
+        const isEmpty = this.state.filteredTorrents.length === 0;
+        console.log('[Dashboard] toggleEmptyState: filteredTorrents', this.state.filteredTorrents.length, 'isEmpty', isEmpty);
         this.refs.emptyState.classList.toggle('hidden', !isEmpty);
         document.querySelector('.card:has(#torrentsList)').classList.toggle('hidden', isEmpty);
     }
