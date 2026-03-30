@@ -409,7 +409,7 @@ class TorrentDashboard {
                     </div>
                 </td>
                 <td>
-                    <div class="flex gap-1">
+                    <div class="flex gap-1 flex-wrap">
                         <button class="btn btn-outline btn-xs tooltip"
                                 data-action="download-magnet"
                                 data-tip="Download magnet file">
@@ -420,10 +420,6 @@ class TorrentDashboard {
                                 data-tip="Copy magnet link">
                             <i class="bi bi-copy"></i>
                         </button>
-                    </div>
-                </td>
-                <td>
-                    <div class="flex gap-1">
                         <button class="btn btn-error btn-outline btn-xs tooltip" 
                                 data-action="delete-local"
                                 data-tip="Delete from local">
