@@ -570,7 +570,7 @@ func bencodeDict(w io.Writer, dict map[string]any) error {
 }
 
 // DownloadTorrentFromCache fetches a .torrent file from public torrent caches using the info hash.
-// It tries multiple cache services and returns the first successful response.
+// It tries multiple cache services with a timeout and returns the first successful response.
 func DownloadTorrentFromCache(infoHash string) ([]byte, error) {
 	if infoHash == "" {
 		return nil, fmt.Errorf("empty info hash")
@@ -589,20 +589,29 @@ func DownloadTorrentFromCache(infoHash string) ([]byte, error) {
 		fmt.Sprintf("https://btcache.me/torrent/%s.torrent", hashLower),
 	}
 
+	// Create a client with timeout
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+
 	var lastErr error
+	var errors []string
+
 	for _, cacheURL := range cacheServices {
 		req, err := http.NewRequest("GET", cacheURL, nil)
 		if err != nil {
 			lastErr = err
+			errors = append(errors, fmt.Sprintf("%s: %v", cacheURL, err))
 			continue
 		}
 
 		// Set a user-agent to avoid being blocked by some services
 		req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
 
-		resp, err := http.DefaultClient.Do(req)
+		resp, err := client.Do(req)
 		if err != nil {
 			lastErr = err
+			errors = append(errors, fmt.Sprintf("%s: request failed (%v)", cacheURL, err))
 			continue
 		}
 
@@ -610,6 +619,7 @@ func DownloadTorrentFromCache(infoHash string) ([]byte, error) {
 		if resp.StatusCode != http.StatusOK {
 			resp.Body.Close()
 			lastErr = fmt.Errorf("cache returned %d", resp.StatusCode)
+			errors = append(errors, fmt.Sprintf("%s: HTTP %d", cacheURL, resp.StatusCode))
 			continue
 		}
 
@@ -618,6 +628,7 @@ func DownloadTorrentFromCache(infoHash string) ([]byte, error) {
 			!strings.Contains(contentType, "application/octet-stream") {
 			resp.Body.Close()
 			lastErr = fmt.Errorf("unexpected content type: %s", contentType)
+			errors = append(errors, fmt.Sprintf("%s: wrong content-type %s", cacheURL, contentType))
 			continue
 		}
 
@@ -627,19 +638,22 @@ func DownloadTorrentFromCache(infoHash string) ([]byte, error) {
 
 		if err != nil {
 			lastErr = err
+			errors = append(errors, fmt.Sprintf("%s: read error (%v)", cacheURL, err))
 			continue
 		}
 
 		if len(data) == 0 {
 			lastErr = fmt.Errorf("empty response from cache")
+			errors = append(errors, fmt.Sprintf("%s: empty response", cacheURL))
 			continue
 		}
 
 		return data, nil
 	}
 
+	// Return detailed error message
 	if lastErr != nil {
-		return nil, fmt.Errorf("failed to download from torrent caches: %w", lastErr)
+		return nil, fmt.Errorf("torrent not found in caches: %s", strings.Join(errors, "; "))
 	}
 	return nil, fmt.Errorf("no working torrent cache service available")
 }
