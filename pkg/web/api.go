@@ -1,15 +1,12 @@
 package web
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
-
-	"github.com/sirrobot01/decypharr/pkg/wire"
-	"golang.org/x/crypto/bcrypt"
-
-	"encoding/json"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/sirrobot01/decypharr/internal/config"
@@ -17,6 +14,7 @@ import (
 	"github.com/sirrobot01/decypharr/internal/utils"
 	"github.com/sirrobot01/decypharr/pkg/arr"
 	"github.com/sirrobot01/decypharr/pkg/version"
+	"github.com/sirrobot01/decypharr/pkg/wire"
 )
 
 func (wb *Web) handleGetArrs(w http.ResponseWriter, r *http.Request) {
@@ -166,6 +164,43 @@ func (wb *Web) handleGetVersion(w http.ResponseWriter, r *http.Request) {
 
 func (wb *Web) handleGetTorrents(w http.ResponseWriter, r *http.Request) {
 	request.JSONResponse(w, wb.torrents.GetAllSorted("", "", nil, "added_on", false), http.StatusOK)
+}
+
+func (wb *Web) handleDownloadTorrent(w http.ResponseWriter, r *http.Request) {
+	hash := r.URL.Query().Get("hash")
+	category := r.URL.Query().Get("category")
+	if hash == "" {
+		http.Error(w, "No hash provided", http.StatusBadRequest)
+		return
+	}
+
+	torrent := wb.torrents.Get(hash, category)
+	if torrent == nil {
+		http.Error(w, "Torrent not found", http.StatusNotFound)
+		return
+	}
+
+	if torrent.TorrentPath == "" {
+		http.Error(w, "Torrent content path not available", http.StatusBadRequest)
+		return
+	}
+
+	data, err := utils.CreateTorrentFileFromPath(torrent.TorrentPath, torrent.Name, torrent.MagnetUri)
+	if err != nil {
+		wb.logger.Error().Err(err).Str("hash", hash).Msg("Failed to build torrent file")
+		http.Error(w, fmt.Sprintf("Failed to build torrent file: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	fileName := torrent.Name
+	if fileName == "" {
+		fileName = hash
+	}
+	fileName = strings.TrimSpace(fileName)
+	w.Header().Set("Content-Type", "application/x-bittorrent")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", fileName+".torrent"))
+	w.Header().Set("Content-Length", strconv.Itoa(len(data)))
+	_, _ = w.Write(data)
 }
 
 func (wb *Web) handleDeleteTorrent(w http.ResponseWriter, r *http.Request) {

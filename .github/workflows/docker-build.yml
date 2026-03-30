@@ -2,8 +2,9 @@ name: Build and Push Docker Image
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - main
+      - dev
   workflow_dispatch:
     inputs:
       upstream_tag:
@@ -31,9 +32,17 @@ jobs:
             TAG=${GITHUB_REF#refs/tags/}
             echo "version=${TAG}" >> $GITHUB_ENV
             echo "channel=stable" >> $GITHUB_ENV
+          elif [[ "${{ github.ref }}" == refs/heads/main ]]; then
+            echo "version=latest" >> $GITHUB_ENV
+            echo "channel=main" >> $GITHUB_ENV
+          elif [[ "${{ github.ref }}" == refs/heads/dev ]]; then
+            echo "version=dev" >> $GITHUB_ENV
+            echo "channel=dev" >> $GITHUB_ENV
           else
+            BRANCH_NAME=${GITHUB_REF#refs/heads/}
             COMMIT=$(git rev-parse --short HEAD)
-            echo "version=${COMMIT}" >> $GITHUB_ENV
+            SAFE_BRANCH=${BRANCH_NAME//\//-}
+            echo "version=${SAFE_BRANCH}-${COMMIT}" >> $GITHUB_ENV
             echo "channel=dev" >> $GITHUB_ENV
           fi
 
@@ -57,8 +66,8 @@ jobs:
           platforms: linux/amd64,linux/arm64,linux/arm/v7
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/decypharr:latest
             ghcr.io/${{ github.repository_owner }}/decypharr:${{ env.version }}
+            ghcr.io/${{ github.repository_owner }}/decypharr:${{ env.channel }}
           build-args: |
             VERSION=${{ env.version }}
             CHANNEL=${{ env.channel }}

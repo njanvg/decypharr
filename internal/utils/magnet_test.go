@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"bytes"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -8,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/anacrolix/torrent/metainfo"
 	"github.com/sirrobot01/decypharr/internal/testutil"
 )
 
@@ -195,4 +197,35 @@ func TestGetMagnetFromUrl_TorrentLink_StripFalse(t *testing.T) {
 	expectedTrackerCount := 2
 
 	testMagnetFromHttpTorrent(t, "ubuntu-25.04-desktop-amd64.iso.torrent", false, expectedInfoHash, expectedName, expectedLink, expectedTrackerCount)
+}
+
+func TestCreateTorrentFileFromPath_SingleFile(t *testing.T) {
+	tmpDir := t.TempDir()
+	filePath := filepath.Join(tmpDir, "test-file.txt")
+	content := []byte("This is a test file for torrent generation.")
+	if err := os.WriteFile(filePath, content, 0o644); err != nil {
+		t.Fatalf("failed to write test file: %v", err)
+	}
+
+	data, err := CreateTorrentFileFromPath(filePath, "test-file", "")
+	if err != nil {
+		t.Fatalf("CreateTorrentFileFromPath failed: %v", err)
+	}
+
+	mi, err := metainfo.Load(bytes.NewReader(data))
+	if err != nil {
+		t.Fatalf("failed to parse generated torrent: %v", err)
+	}
+
+	info, err := mi.UnmarshalInfo()
+	if err != nil {
+		t.Fatalf("failed to unmarshal torrent info: %v", err)
+	}
+
+	if info.Name != "test-file" {
+		t.Errorf("expected torrent name 'test-file', got '%s'", info.Name)
+	}
+	if info.Length != int64(len(content)) {
+		t.Errorf("expected torrent length %d, got %d", len(content), info.Length)
+	}
 }

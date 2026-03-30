@@ -63,6 +63,45 @@ class TorrentDashboard {
                 this.toggleTorrentSelection(e.target.dataset.hash, e.target.checked);
             }
         });
+
+        // Row action buttons
+        this.refs.torrentsList.addEventListener('click', async (e) => {
+            const button = e.target.closest('button[data-action]');
+            if (!button) return;
+
+            const row = button.closest('tr[data-hash]');
+            if (!row) return;
+
+            const action = button.dataset.action;
+            const hash = row.dataset.hash;
+            const category = row.dataset.category || '';
+            const magnetUri = row.dataset.magnetUri || '';
+            const name = row.dataset.name || '';
+
+            if (action === 'download-torrent') {
+                await this.downloadTorrentFile(name, category, hash);
+                return;
+            }
+
+            if (action === 'download-magnet') {
+                this.downloadMagnetFile(name, hash, magnetUri);
+                return;
+            }
+
+            if (action === 'copy-magnet') {
+                await this.copyMagnet(hash, magnetUri);
+                return;
+            }
+
+            if (action === 'delete-local') {
+                await this.deleteTorrent(hash, category, false);
+                return;
+            }
+
+            if (action === 'delete-debrid') {
+                await this.deleteTorrent(hash, category, true);
+            }
+        });
     }
 
     bindContextMenu() {
@@ -96,7 +135,8 @@ class TorrentDashboard {
         this.state.selectedTorrentContextMenu = {
             hash: row.dataset.hash,
             name: row.dataset.name,
-            category: row.dataset.category || ''
+            category: row.dataset.category || '',
+            magnetUri: row.dataset.magnetUri || ''
         };
 
         this.refs.torrentContextMenu.querySelector('.torrent-name').textContent =
@@ -124,12 +164,7 @@ class TorrentDashboard {
 
         const actions = {
             'copy-magnet': async () => {
-                try {
-                    await navigator.clipboard.writeText(`magnet:?xt=urn:btih:${torrent.hash}`);
-                    window.decypharrUtils.createToast('Magnet link copied to clipboard');
-                } catch (error) {
-                    window.decypharrUtils.createToast('Failed to copy magnet link', 'error');
-                }
+                await this.copyMagnet(torrent.hash, torrent.magnetUri);
             },
             'copy-name': async () => {
                 try {
@@ -262,12 +297,13 @@ class TorrentDashboard {
     torrentRowTemplate(torrent) {
         const progressPercent = (torrent.progress * 100).toFixed(1);
         const isSelected = this.state.selectedTorrents.has(torrent.hash);
-        let addedOn = new Date(torrent.added_on).toLocaleString();
+        const magnetUri = this.normalizeMagnetUri(torrent.magnet_uri, torrent.hash);
 
         return `
             <tr data-hash="${torrent.hash}" 
                 data-name="${this.escapeHtml(torrent.name)}" 
-                data-category="${torrent.category || ''}"
+                data-category="${this.escapeHtml(torrent.category || '')}"
+                data-magnet-uri="${this.escapeHtml(magnetUri)}"
                 class="hover:bg-base-200 transition-colors">
                 <td>
                     <label class="cursor-pointer">
@@ -318,14 +354,35 @@ class TorrentDashboard {
                 </td>
                 <td>
                     <div class="flex gap-1">
+                        <button class="btn btn-outline btn-xs tooltip"
+                                data-action="download-torrent"
+                                data-tip="Download torrent file">
+                            <i class="bi bi-file-earmark-arrow-down"></i>
+                        </button>
+                        <button class="btn btn-outline btn-xs tooltip"
+                                data-action="download-magnet"
+                                data-tip="Download magnet file">
+                            <i class="bi bi-magnet"></i>
+                        </button>
+                    </div>
+                </td>
+                <td>
+                    <button class="btn btn-outline btn-xs tooltip"
+                            data-action="copy-magnet"
+                            data-tip="Copy magnet link">
+                        <i class="bi bi-copy"></i>
+                    </button>
+                </td>
+                <td>
+                    <div class="flex gap-1">
                         <button class="btn btn-error btn-outline btn-xs tooltip" 
-                                onclick="dashboard.deleteTorrent('${torrent.hash}', '${torrent.category || ''}', false);"
+                                data-action="delete-local"
                                 data-tip="Delete from local">
                             <i class="bi bi-trash"></i>
                         </button>
                         ${torrent.debrid && torrent.id ? `
                             <button class="btn btn-error btn-outline btn-xs tooltip" 
-                                    onclick="dashboard.deleteTorrent('${torrent.hash}', '${torrent.category || ''}', true);"
+                                    data-action="delete-debrid"
                                     data-tip="Remove from ${torrent.debrid}">
                                 <i class="bi bi-cloud-slash"></i>
                             </button>
@@ -555,5 +612,105 @@ class TorrentDashboard {
             "'": '&#039;'
         };
         return text ? text.replace(/[&<>"']/g, (m) => map[m]) : '';
+    }
+
+    normalizeMagnetUri(rawMagnet, hash) {
+        let magnetUri = (rawMagnet || '').trim();
+
+        for (let i = 0; i < 2; i++) {
+            if (!magnetUri || magnetUri.toLowerCase().startsWith('magnet:?')) {
+                break;
+            }
+            try {
+                const decoded = decodeURIComponent(magnetUri);
+                if (decoded === magnetUri) {
+                    break;
+                }
+                magnetUri = decoded.trim();
+            } catch (_) {
+                break;
+            }
+        }
+
+        if (!magnetUri && hash) {
+            return `magnet:?xt=urn:btih:${hash}`;
+        }
+
+        if (!magnetUri.toLowerCase().startsWith('magnet:?') && hash) {
+            return `magnet:?xt=urn:btih:${hash}`;
+        }
+
+        return magnetUri;
+    }
+
+    async copyMagnet(hash, rawMagnet) {
+        const magnetUri = this.normalizeMagnetUri(rawMagnet, hash);
+        if (!magnetUri) {
+            window.decypharrUtils.createToast('No magnet link found for this torrent', 'warning');
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(magnetUri);
+            window.decypharrUtils.createToast('Magnet link copied to clipboard');
+        } catch (error) {
+            window.decypharrUtils.createToast('Failed to copy magnet link', 'error');
+        }
+    }
+
+    async downloadTorrentFile(name, category, hash) {
+        const safeCategory = category || '';
+        const url = `/api/torrents/download?hash=${encodeURIComponent(hash)}&category=${encodeURIComponent(safeCategory)}`;
+
+        try {
+            const response = await window.decypharrUtils.fetcher(url, { method: 'GET' });
+            if (!response.ok) {
+                const errorText = await response.text();
+                window.decypharrUtils.createToast(`Failed to download torrent: ${errorText}`, 'error');
+                return;
+            }
+
+            const blob = await response.blob();
+            const safeName = (name || hash || 'torrent')
+                .replace(/[<>:"/\\|?*\x00-\x1F]/g, '_')
+                .trim()
+                .slice(0, 120);
+            const fileName = `${safeName || 'torrent'}.torrent`;
+            const downloadUrl = URL.createObjectURL(blob);
+            const anchor = document.createElement('a');
+            anchor.href = downloadUrl;
+            anchor.download = fileName;
+            document.body.appendChild(anchor);
+            anchor.click();
+            anchor.remove();
+            URL.revokeObjectURL(downloadUrl);
+            window.decypharrUtils.createToast('Torrent file downloaded');
+        } catch (error) {
+            console.error('Error downloading torrent file:', error);
+            window.decypharrUtils.createToast('Failed to download torrent file', 'error');
+        }
+    }
+
+    downloadMagnetFile(name, hash, rawMagnet) {
+        const magnetUri = this.normalizeMagnetUri(rawMagnet, hash);
+        if (!magnetUri) {
+            window.decypharrUtils.createToast('No magnet link found for this torrent', 'warning');
+            return;
+        }
+
+        const safeName = (name || hash || 'torrent')
+            .replace(/[<>:"/\\|?*\x00-\x1F]/g, '_')
+            .trim()
+            .slice(0, 120);
+
+        const blob = new Blob([`${magnetUri}\n`], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = `${safeName || 'torrent'}.magnet`;
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        URL.revokeObjectURL(url);
     }
 }
