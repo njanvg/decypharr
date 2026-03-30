@@ -64,6 +64,8 @@ class TorrentDashboard {
 
     bindEvents() {
         console.log('[Dashboard] bindEvents called');
+        console.log('[Dashboard] Checking refs.searchInput:', this.refs.searchInput, 'type:', typeof this.refs.searchInput);
+        
         // Refresh button
         this.refs.refreshBtn.addEventListener('click', () => this.loadTorrents());
 
@@ -74,22 +76,21 @@ class TorrentDashboard {
         // Select all checkbox
         this.refs.selectAll.addEventListener('change', (e) => this.toggleSelectAll(e.target.checked));
 
-        // Search input - attach immediately without setTimeout
-        try {
-            if (this.refs.searchInput) {
-                console.log('[Dashboard] Attaching search input listener');
-                this.refs.searchInput.addEventListener('input', (e) => {
-                    console.log('[Dashboard] Search input changed to:', e.target.value);
-                    this.state.searchTerm = e.target.value;
-                    this.state.currentPage = 1;
-                    this.updateUI();
-                });
-                console.log('[Dashboard] Search listener attached successfully');
-            } else {
-                console.error('[Dashboard] searchInput not found! refs:', Object.keys(this.refs));
-            }
-        } catch (e) {
-            console.error('[Dashboard] Error attaching search listener:', e);
+        // Search input - with detailed logging
+        console.log('[Dashboard] About to attach search listener');
+        if (this.refs.searchInput) {
+            console.log('[Dashboard] ✓ searchInput element found, attaching listener');
+            const searchHandler = (e) => {
+                console.log('[Dashboard] SEARCH EVENT FIRED:', e.target.value);
+                this.state.searchTerm = e.target.value;
+                this.state.currentPage = 1;
+                this.updateUI();
+            };
+            this.refs.searchInput.addEventListener('input', searchHandler);
+            console.log('[Dashboard] ✓ Search listener attached successfully');
+        } else {
+            console.error('[Dashboard] ✗ SEARCHINPUT NOT FOUND! Element is null/undefined');
+            console.error('[Dashboard] Available refs:', Object.keys(this.refs));
         }
 
         // Filters
