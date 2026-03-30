@@ -375,7 +375,7 @@ class TorrentDashboard {
                 data-magnet-uri="${this.escapeHtml(magnetUri)}"
                 data-has-torrent-path="${torrent.TorrentPath ? 'true' : 'false'}"
                 class="hover:bg-base-200 transition-colors">
-                <td>
+                <td class="w-10">
                     <label class="cursor-pointer">
                         <input type="checkbox" 
                                class="checkbox checkbox-sm torrent-select" 
@@ -383,15 +383,15 @@ class TorrentDashboard {
                                ${isSelected ? 'checked' : ''}>
                     </label>
                 </td>
-                <td class="max-w-xs">
+                <td class="min-w-48">
                     <div class="truncate font-medium" title="${this.escapeHtml(torrent.name)}">
                         ${this.escapeHtml(torrent.name)}
                     </div>
                 </td>
-                <td class="text-nowrap font-mono text-sm">
+                <td class="min-w-24 text-nowrap font-mono text-sm">
                     ${window.decypharrUtils.formatBytes(torrent.size)}
                 </td>
-                <td class="min-w-36">
+                <td class="min-w-32">
                     <div class="flex items-center gap-3">
                         <progress class="progress progress-primary w-20 h-2" 
                                   value="${progressPercent}" 
@@ -399,10 +399,10 @@ class TorrentDashboard {
                         <span class="text-sm font-medium min-w-12">${progressPercent}%</span>
                     </div>
                 </td>
-                <td class="text-nowrap font-mono text-sm">
+                <td class="min-w-20 text-nowrap font-mono text-sm">
                     ${window.decypharrUtils.formatSpeed(torrent.dlspeed)}
                 </td>
-                <td>
+                <td class="min-w-16">
                     <div class="flex gap-1">
                         <button class="btn btn-outline btn-xs tooltip"
                                 data-action="download-torrent"
@@ -411,27 +411,27 @@ class TorrentDashboard {
                         </button>
                     </div>
                 </td>
-                <td>
+                <td class="min-w-24">
                     ${torrent.category ?
             `<div class="badge badge-secondary badge-sm">${this.escapeHtml(torrent.category)}</div>` :
             '<span class="text-base-content/50">None</span>'
         }
                 </td>
-                <td>
+                <td class="min-w-24">
                     ${torrent.debrid ?
             `<div class="badge badge-accent badge-sm">${this.escapeHtml(torrent.debrid)}</div>` :
             '<span class="text-base-content/50">None</span>'
         }
                 </td>
-                <td class="text-nowrap font-mono text-sm">
+                <td class="min-w-16 text-nowrap font-mono text-sm">
                     ${torrent.num_seeds || 0}
                 </td>
-                <td>
+                <td class="min-w-20">
                     <div class="badge ${this.getStateColor(torrent.state)} badge-sm">
                         ${this.escapeHtml(torrent.state)}
                     </div>
                 </td>
-                <td>
+                <td class="w-32">
                     <div class="flex gap-1 flex-wrap">
                         <button class="btn btn-outline btn-xs tooltip"
                                 data-action="download-magnet"
