@@ -173,7 +173,15 @@
 <script src="{{.URLBase}}assets/js/common.js"></script>
 
 {{ if eq .Page "index" }}
-<script src="{{.URLBase}}assets/js/dashboard.js"></script>
+<script>
+    // Force fresh dashboard script in case browser has stale cached version
+    const cb = Date.now();
+    const dashScript = document.createElement('script');
+    dashScript.src = `${window.urlBase || '{{.URLBase}}'}assets/js/dashboard.js?cb=${cb}`;
+    dashScript.onload = () => console.log('[Layout] Dashboard script loaded (cache-busted)');
+    dashScript.onerror = () => console.error('[Layout] Failed to load dashboard script, check network/URL');
+    document.body.appendChild(dashScript);
+</script>
 {{ else if eq .Page "download" }}
 <script src="{{.URLBase}}assets/js/download.js"></script>
 {{ else if eq .Page "repair" }}

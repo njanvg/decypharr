@@ -24,6 +24,7 @@ class TorrentDashboard {
             sortSelector: document.getElementById('sortSelector'),
             selectAll: document.getElementById('selectAll'),
             batchDeleteBtn: document.getElementById('batchDeleteBtn'),
+            batchCopyBtn: document.getElementById('batchCopyBtn'),
             batchDeleteDebridBtn: document.getElementById('batchDeleteDebridBtn'),
             refreshBtn: document.getElementById('refreshBtn'),
             torrentContextMenu: document.getElementById('torrentContextMenu'),
@@ -69,8 +70,9 @@ class TorrentDashboard {
         // Refresh button
         this.refs.refreshBtn.addEventListener('click', () => this.loadTorrents());
 
-        // Batch delete
+        // Batch actions
         this.refs.batchDeleteBtn.addEventListener('click', () => this.deleteSelectedTorrents());
+        this.refs.batchCopyBtn.addEventListener('click', () => this.copySelectedMagnets());
         this.refs.batchDeleteDebridBtn.addEventListener('click', () => this.deleteSelectedTorrents(true));
 
         // Select all checkbox
@@ -449,8 +451,6 @@ class TorrentDashboard {
             </tr>
         `;
     }
-    }
-    }
 
     getStateColor(state) {
         const stateColors = {
@@ -535,9 +535,11 @@ class TorrentDashboard {
             }
         });
 
-        // Update batch delete button
-        this.refs.batchDeleteBtn.classList.toggle('hidden', this.state.selectedTorrents.size === 0);
-        this.refs.batchDeleteDebridBtn.classList.toggle('hidden', this.state.selectedTorrents.size === 0);
+        // Update batch action buttons
+        const hasSelection = this.state.selectedTorrents.size > 0;
+        this.refs.batchDeleteBtn.classList.toggle('hidden', !hasSelection);
+        this.refs.batchCopyBtn.classList.toggle('hidden', !hasSelection);
+        this.refs.batchDeleteDebridBtn.classList.toggle('hidden', !hasSelection);
 
         // Update select all checkbox
         const visibleTorrents = this.state.filteredTorrents.slice(
@@ -613,6 +615,54 @@ class TorrentDashboard {
             this.state.selectedTorrents.delete(hash);
         }
         this.updateSelectionUI();
+    }
+
+    async copySelectedMagnets() {
+        const selectedHashes = Array.from(this.state.selectedTorrents);
+        if (selectedHashes.length === 0) {
+            window.decypharrUtils.createToast('No torrents selected', 'warning');
+            return;
+        }
+
+        const selectedTorrents = this.state.torrents.filter(t => selectedHashes.includes(t.hash));
+        if (selectedTorrents.length === 0) {
+            window.decypharrUtils.createToast('Selected torrents not found in list', 'error');
+            return;
+        }
+
+        const magnetLinks = selectedTorrents.map(t => this.normalizeMagnetUri(t.magnet_uri, t.hash)).filter(Boolean);
+        if (magnetLinks.length === 0) {
+            window.decypharrUtils.createToast('No magnet links available for selected torrents', 'warning');
+            return;
+        }
+
+        const clipboardText = magnetLinks.join('\n');
+
+        try {
+            if (navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(clipboardText);
+            } else {
+                const textarea = document.createElement('textarea');
+                textarea.value = clipboardText;
+                textarea.style.position = 'fixed';
+                textarea.style.left = '-9999px';
+                textarea.style.top = '0';
+                textarea.setAttribute('readonly', '');
+                document.body.appendChild(textarea);
+                textarea.focus();
+                textarea.select();
+
+                if (!document.execCommand('copy')) {
+                    throw new Error('Clipboard API not available');
+                }
+
+                document.body.removeChild(textarea);
+            }
+            window.decypharrUtils.createToast('Selected magnet links copied to clipboard');
+        } catch (error) {
+            console.error('Failed to copy selected magnet links:', error);
+            window.decypharrUtils.createToast(this.formatErrorMessage('Failed to copy selected magnet links', error), 'error');
+        }
     }
 
     async deleteTorrent(hash, category, removeFromDebrid = false) {
