@@ -334,15 +334,6 @@ class TorrentDashboard {
                     ${window.decypharrUtils.formatSpeed(torrent.dlspeed)}
                 </td>
                 <td>
-                    <div class="flex gap-1">
-                        <button class="btn btn-outline btn-xs tooltip"
-                                data-action="download-torrent"
-                                data-tip="Download torrent file">
-                            <i class="bi bi-file-earmark-arrow-down"></i>
-                        </button>
-                    </div>
-                </td>
-                <td>
                     ${torrent.category ?
             `<div class="badge badge-secondary badge-sm">${this.escapeHtml(torrent.category)}</div>` :
             '<span class="text-base-content/50">None</span>'
@@ -364,6 +355,11 @@ class TorrentDashboard {
                 </td>
                 <td>
                     <div class="flex gap-1">
+                        <button class="btn btn-outline btn-xs tooltip"
+                                data-action="download-torrent"
+                                data-tip="Download torrent file">
+                            <i class="bi bi-file-earmark-arrow-down"></i>
+                        </button>
                         <button class="btn btn-outline btn-xs tooltip"
                                 data-action="download-magnet"
                                 data-tip="Download magnet file">
