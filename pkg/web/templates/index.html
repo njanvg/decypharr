@@ -128,8 +128,11 @@
 </ul>
 
 <script>
+    console.log('[Index] DOM script loaded');
     document.addEventListener('DOMContentLoaded', () => {
+        console.log('[Index] DOMContentLoaded fired, instantiating dashboard');
         window.dashboard = new TorrentDashboard();
+        console.log('[Index] Dashboard instantiated:', window.dashboard);
     });
 </script>
 {{ end }}

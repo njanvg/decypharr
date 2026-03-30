@@ -39,9 +39,27 @@ class TorrentDashboard {
     }
 
     init() {
-        this.bindEvents();
-        this.loadTorrents();
-        this.startAutoRefresh();
+        console.log('[Dashboard] init() called');
+        try {
+            this.bindEvents();
+            console.log('[Dashboard] bindEvents completed');
+        } catch (e) {
+            console.error('[Dashboard] Error in bindEvents:', e);
+        }
+        
+        try {
+            this.loadTorrents();
+            console.log('[Dashboard] loadTorrents started');
+        } catch (e) {
+            console.error('[Dashboard] Error in loadTorrents:', e);
+        }
+        
+        try {
+            this.startAutoRefresh();
+            console.log('[Dashboard] startAutoRefresh started');
+        } catch (e) {
+            console.error('[Dashboard] Error in startAutoRefresh:', e);
+        }
     }
 
     bindEvents() {
@@ -57,16 +75,21 @@ class TorrentDashboard {
         this.refs.selectAll.addEventListener('change', (e) => this.toggleSelectAll(e.target.checked));
 
         // Search input - attach immediately without setTimeout
-        if (this.refs.searchInput) {
-            console.log('[Dashboard] Attaching search input listener');
-            this.refs.searchInput.addEventListener('input', (e) => {
-                console.log('[Dashboard] Search input changed to:', e.target.value);
-                this.state.searchTerm = e.target.value;
-                this.state.currentPage = 1;
-                this.updateUI();
-            });
-        } else {
-            console.error('[Dashboard] searchInput not found!');
+        try {
+            if (this.refs.searchInput) {
+                console.log('[Dashboard] Attaching search input listener');
+                this.refs.searchInput.addEventListener('input', (e) => {
+                    console.log('[Dashboard] Search input changed to:', e.target.value);
+                    this.state.searchTerm = e.target.value;
+                    this.state.currentPage = 1;
+                    this.updateUI();
+                });
+                console.log('[Dashboard] Search listener attached successfully');
+            } else {
+                console.error('[Dashboard] searchInput not found! refs:', Object.keys(this.refs));
+            }
+        } catch (e) {
+            console.error('[Dashboard] Error attaching search listener:', e);
         }
 
         // Filters
