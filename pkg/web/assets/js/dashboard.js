@@ -51,10 +51,17 @@ class TorrentDashboard {
         // Select all checkbox
         this.refs.selectAll.addEventListener('change', (e) => this.toggleSelectAll(e.target.checked));
 
-        // Search input
-        if (this.refs.searchInput) {
-            this.refs.searchInput.addEventListener('input', (e) => this.setSearch(e.target.value));
-        }
+        // Search input - with better error handling
+        setTimeout(() => {
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    this.state.searchTerm = e.target.value;
+                    this.state.currentPage = 1;
+                    this.updateUI();
+                });
+            }
+        }, 100);
 
         // Filters
         this.refs.categoryFilter.addEventListener('change', (e) => this.setFilter('category', e.target.value));
@@ -237,10 +244,13 @@ class TorrentDashboard {
     filterTorrents() {
         let filtered = [...this.state.torrents];
 
-        // Search filter
-        if (this.state.searchTerm && this.state.searchTerm.trim()) {
-            const searchLower = this.state.searchTerm.toLowerCase().trim();
-            filtered = filtered.filter(t => t.name?.toLowerCase().includes(searchLower));
+        // Search filter with better null/undefined handling
+        const searchTerm = (this.state.searchTerm || '').trim().toLowerCase();
+        if (searchTerm.length > 0) {
+            filtered = filtered.filter(t => {
+                const name = (t.name || '').toLowerCase();
+                return name.includes(searchTerm);
+            });
         }
 
         // Category filter
@@ -250,7 +260,7 @@ class TorrentDashboard {
 
         // State filter
         if (this.state.selectedState) {
-            filtered = filtered.filter(t => t.state?.toLowerCase() === this.state.selectedState.toLowerCase());
+            filtered = filtered.filter(t => (t.state || '').toLowerCase() === this.state.selectedState.toLowerCase());
         }
 
         // Sort torrents
@@ -517,12 +527,6 @@ class TorrentDashboard {
     }
 
     // Event handlers
-    setSearch(searchTerm) {
-        this.state.searchTerm = searchTerm;
-        this.state.currentPage = 1;
-        this.updateUI();
-    }
-
     setFilter(type, value) {
         if (type === 'category') {
             this.state.selectedCategory = value;
@@ -532,6 +536,8 @@ class TorrentDashboard {
         this.state.currentPage = 1;
         this.updateUI();
     }
+
+    // Removed setSearch method - inline in bindEvents for reliability
 
     setSort(sortBy) {
         this.state.sortBy = sortBy;
