@@ -8,6 +8,7 @@ class TorrentDashboard {
             filteredTorrents: [],
             selectedCategory: '',
             selectedState: '',
+            searchTerm: '',
             sortBy: 'added_on',
             itemsPerPage: 20,
             currentPage: 1,
@@ -16,6 +17,7 @@ class TorrentDashboard {
 
         this.refs = {
             torrentsList: document.getElementById('torrentsList'),
+            searchInput: document.getElementById('searchInput'),
             categoryFilter: document.getElementById('categoryFilter'),
             stateFilter: document.getElementById('stateFilter'),
             sortSelector: document.getElementById('sortSelector'),
@@ -48,6 +50,9 @@ class TorrentDashboard {
 
         // Select all checkbox
         this.refs.selectAll.addEventListener('change', (e) => this.toggleSelectAll(e.target.checked));
+
+        // Search input
+        this.refs.searchInput.addEventListener('input', (e) => this.setSearch(e.target.value));
 
         // Filters
         this.refs.categoryFilter.addEventListener('change', (e) => this.setFilter('category', e.target.value));
@@ -229,6 +234,11 @@ class TorrentDashboard {
 
     filterTorrents() {
         let filtered = [...this.state.torrents];
+
+        if (this.state.searchTerm) {
+            const searchLower = this.state.searchTerm.toLowerCase();
+            filtered = filtered.filter(t => t.name?.toLowerCase().includes(searchLower));
+        }
 
         if (this.state.selectedCategory) {
             filtered = filtered.filter(t => t.category === this.state.selectedCategory);
@@ -502,6 +512,12 @@ class TorrentDashboard {
     }
 
     // Event handlers
+    setSearch(searchTerm) {
+        this.state.searchTerm = searchTerm;
+        this.state.currentPage = 1;
+        this.updateUI();
+    }
+
     setFilter(type, value) {
         if (type === 'category') {
             this.state.selectedCategory = value;
