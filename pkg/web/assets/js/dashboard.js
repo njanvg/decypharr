@@ -403,20 +403,6 @@ class TorrentDashboard {
                 <td class="min-w-20">
                     <span class="text-nowrap font-mono text-sm">${window.decypharrUtils.formatSpeed(torrent.dlspeed)}</span>
                 </td>
-                <!-- Torrent Column (Download torrent, Download magnet, Copy magnet) -->
-                <td class="min-w-16">
-                    <div class="flex gap-1 flex-wrap">
-                        <button class="btn btn-outline btn-xs tooltip" data-action="download-torrent" data-tip="Download torrent file">
-                            <i class="bi bi-file-earmark-arrow-down"></i>
-                        </button>
-                        <button class="btn btn-outline btn-xs tooltip" data-action="download-magnet" data-tip="Download magnet file">
-                            <i class="bi bi-magnet"></i>
-                        </button>
-                        <button class="btn btn-outline btn-xs tooltip" data-action="copy-magnet" data-tip="Copy magnet link">
-                            <i class="bi bi-copy"></i>
-                        </button>
-                    </div>
-                </td>
                 <!-- Category Column -->
                 <td class="min-w-24">
                     ${torrent.category ? `<div class="badge badge-secondary badge-sm">${this.escapeHtml(torrent.category)}</div>` : '<span class="text-base-content/50">None</span>'}
@@ -433,6 +419,20 @@ class TorrentDashboard {
                 <td class="min-w-20">
                     <div class="badge ${this.getStateColor(torrent.state)} badge-sm">
                         ${this.escapeHtml(torrent.state)}
+                    </div>
+                </td>
+                <!-- Torrents Column (Download torrent, Download magnet, Copy magnet) -->
+                <td class="min-w-16">
+                    <div class="flex gap-1 flex-wrap">
+                        <button class="btn btn-outline btn-xs tooltip" data-action="download-torrent" data-tip="Download torrent file">
+                            <i class="bi bi-file-earmark-arrow-down"></i>
+                        </button>
+                        <button class="btn btn-outline btn-xs tooltip" data-action="download-magnet" data-tip="Download magnet file">
+                            <i class="bi bi-magnet"></i>
+                        </button>
+                        <button class="btn btn-outline btn-xs tooltip" data-action="copy-magnet" data-tip="Copy magnet link">
+                            <i class="bi bi-copy"></i>
+                        </button>
                     </div>
                 </td>
                 <!-- Actions Column -->
