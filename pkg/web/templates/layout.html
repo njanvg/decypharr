@@ -178,7 +178,16 @@
     const cb = Date.now();
     const dashScript = document.createElement('script');
     dashScript.src = `${window.urlBase || '{{.URLBase}}'}assets/js/dashboard.js?cb=${cb}`;
-    dashScript.onload = () => console.log('[Layout] Dashboard script loaded (cache-busted)');
+    dashScript.onload = () => {
+        console.log('[Layout] Dashboard script loaded (cache-busted)');
+        if (typeof window.TorrentDashboard === 'function') {
+            console.log('[Layout] Instantiating TorrentDashboard now');
+            window.dashboard = new TorrentDashboard();
+            console.log('[Layout] Dashboard instantiated:', window.dashboard);
+        } else {
+            console.error('[Layout] TorrentDashboard is not defined after loading dashboard.js');
+        }
+    };
     dashScript.onerror = () => console.error('[Layout] Failed to load dashboard script, check network/URL');
     document.body.appendChild(dashScript);
 </script>
