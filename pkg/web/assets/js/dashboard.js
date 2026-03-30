@@ -83,9 +83,7 @@ class TorrentDashboard {
             const searchHandler = (e) => {
                 const val = (e.target.value || '').trim();
                 console.log('[Dashboard] SEARCH EVENT FIRED:', e.type, val);
-                this.state.searchTerm = val;
-                this.state.currentPage = 1;
-                this.updateUI();
+                this.setSearch(val);
             };
             this.refs.searchInput.addEventListener('input', searchHandler);
             this.refs.searchInput.addEventListener('keyup', searchHandler);
@@ -571,7 +569,19 @@ class TorrentDashboard {
         this.updateUI();
     }
 
-    // Removed setSearch method - inline in bindEvents for reliability
+    setSearch(term) {
+        const normalized = (term || '').trim().toLowerCase();
+        console.log('[Dashboard] setSearch', normalized);
+        this.state.searchTerm = normalized;
+        this.state.currentPage = 1;
+
+        this.filterTorrents();
+        this.updateCategoryFilter();
+        this.renderTorrents();
+        this.updatePagination();
+        this.updateSelectionUI();
+        this.toggleEmptyState();
+    }
 
     setSort(sortBy) {
         this.state.sortBy = sortBy;
