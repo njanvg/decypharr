@@ -387,12 +387,23 @@ class DecypharrUtils {
             const versionBadge = document.getElementById('version-badge');
 
             if (versionBadge) {
+                // Create tooltip with build details
+                let tooltip = `${data.channel}-${data.version}`;
+                if (data.build_number && data.build_number !== '') {
+                    tooltip += `\nBuild: ${data.build_number}`;
+                }
+                if (data.branch && data.branch !== '') {
+                    tooltip += `\nBranch: ${data.branch}`;
+                }
+
                 versionBadge.innerHTML = `
-                    <a href="https://github.com/sirrobot01/decypharr/releases/tag/v${data.version}" 
-                       target="_blank" 
-                       class="text-current hover:text-primary transition-colors">
-                        ${data.channel}-${data.version}
-                    </a>
+                    <span class="tooltip tooltip-bottom" data-tip="${tooltip.replace(/\n/g, ' | ')}">
+                        <a href="https://github.com/sirrobot01/decypharr/releases/tag/v${data.version}" 
+                           target="_blank" 
+                           class="text-current hover:text-primary transition-colors">
+                            ${data.channel}-${data.version}${data.build_number ? ` (${data.build_number.substring(0, 7)})` : ''}
+                        </a>
+                    </span>
                 `;
 
                 // Remove existing badge classes

@@ -28,22 +28,31 @@ jobs:
       - name: Determine version
         id: version
         run: |
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          COMMIT=$(git rev-parse --short HEAD)
+          
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
             TAG=${GITHUB_REF#refs/tags/}
             echo "version=${TAG}" >> $GITHUB_ENV
             echo "channel=stable" >> $GITHUB_ENV
+            echo "build_number=${COMMIT}" >> $GITHUB_ENV
+            echo "branch=main" >> $GITHUB_ENV
           elif [[ "${{ github.ref }}" == refs/heads/main ]]; then
             echo "version=latest" >> $GITHUB_ENV
             echo "channel=main" >> $GITHUB_ENV
+            echo "build_number=${COMMIT}" >> $GITHUB_ENV
+            echo "branch=main" >> $GITHUB_ENV
           elif [[ "${{ github.ref }}" == refs/heads/dev ]]; then
             echo "version=dev" >> $GITHUB_ENV
             echo "channel=dev" >> $GITHUB_ENV
+            echo "build_number=${COMMIT}" >> $GITHUB_ENV
+            echo "branch=dev" >> $GITHUB_ENV
           else
-            BRANCH_NAME=${GITHUB_REF#refs/heads/}
-            COMMIT=$(git rev-parse --short HEAD)
             SAFE_BRANCH=${BRANCH_NAME//\//-}
             echo "version=${SAFE_BRANCH}-${COMMIT}" >> $GITHUB_ENV
             echo "channel=dev" >> $GITHUB_ENV
+            echo "build_number=${COMMIT}" >> $GITHUB_ENV
+            echo "branch=${SAFE_BRANCH}" >> $GITHUB_ENV
           fi
 
       - name: Set up QEMU
@@ -71,6 +80,8 @@ jobs:
           build-args: |
             VERSION=${{ env.version }}
             CHANNEL=${{ env.channel }}
+            BUILD_NUMBER=${{ env.build_number }}
+            BRANCH=${{ env.branch }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

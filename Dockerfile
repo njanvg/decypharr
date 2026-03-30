@@ -5,6 +5,8 @@ ARG TARGETOS
 ARG TARGETARCH
 ARG VERSION=0.0.0
 ARG CHANNEL=dev
+ARG BUILD_NUMBER=unknown
+ARG BRANCH=unknown
 
 WORKDIR /app
 
@@ -19,7 +21,7 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
     go build -trimpath \
-    -ldflags="-w -s -X github.com/sirrobot01/decypharr/pkg/version.Version=${VERSION} -X github.com/sirrobot01/decypharr/pkg/version.Channel=${CHANNEL}" \
+    -ldflags="-w -s -X github.com/sirrobot01/decypharr/pkg/version.Version=${VERSION} -X github.com/sirrobot01/decypharr/pkg/version.Channel=${CHANNEL} -X github.com/sirrobot01/decypharr/pkg/version.BuildNumber=${BUILD_NUMBER} -X github.com/sirrobot01/decypharr/pkg/version.Branch=${BRANCH}" \
     -o /decypharr
 
 # Build healthcheck (optimized)
@@ -34,8 +36,12 @@ FROM alpine:latest
 
 ARG VERSION=0.0.0
 ARG CHANNEL=dev
+ARG BUILD_NUMBER=unknown
+ARG BRANCH=unknown
 
 LABEL version = "${VERSION}-${CHANNEL}"
+LABEL build.number = "${BUILD_NUMBER}"
+LABEL build.branch = "${BRANCH}"
 LABEL org.opencontainers.image.source = "https://github.com/sirrobot01/decypharr"
 LABEL org.opencontainers.image.title = "decypharr"
 LABEL org.opencontainers.image.authors = "sirrobot01"
