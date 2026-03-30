@@ -375,90 +375,78 @@ class TorrentDashboard {
                 data-magnet-uri="${this.escapeHtml(magnetUri)}"
                 data-has-torrent-path="${torrent.TorrentPath ? 'true' : 'false'}"
                 class="hover:bg-base-200 transition-colors">
+                <!-- Checkbox Column -->
                 <td class="w-10">
                     <label class="cursor-pointer">
-                        <input type="checkbox" 
-                               class="checkbox checkbox-sm torrent-select" 
-                               data-hash="${torrent.hash}" 
-                               ${isSelected ? 'checked' : ''}>
+                        <input type="checkbox" class="checkbox checkbox-sm torrent-select" data-hash="${torrent.hash}" ${isSelected ? 'checked' : ''}>
                     </label>
                 </td>
+                <!-- Name Column -->
                 <td class="min-w-48">
                     <div class="truncate font-medium" title="${this.escapeHtml(torrent.name)}">
                         ${this.escapeHtml(torrent.name)}
                     </div>
                 </td>
-                <td class="min-w-24 text-nowrap font-mono text-sm">
-                    ${window.decypharrUtils.formatBytes(torrent.size)}
+                <!-- Size Column -->
+                <td class="min-w-24">
+                    <span class="text-nowrap font-mono text-sm">${window.decypharrUtils.formatBytes(torrent.size)}</span>
                 </td>
+                <!-- Progress Column -->
                 <td class="min-w-32">
                     <div class="flex items-center gap-3">
-                        <progress class="progress progress-primary w-20 h-2" 
-                                  value="${progressPercent}" 
-                                  max="100"></progress>
+                        <progress class="progress progress-primary w-20 h-2" value="${progressPercent}" max="100"></progress>
                         <span class="text-sm font-medium min-w-12">${progressPercent}%</span>
                     </div>
                 </td>
-                <td class="min-w-20 text-nowrap font-mono text-sm">
-                    ${window.decypharrUtils.formatSpeed(torrent.dlspeed)}
+                <!-- Speed Column -->
+                <td class="min-w-20">
+                    <span class="text-nowrap font-mono text-sm">${window.decypharrUtils.formatSpeed(torrent.dlspeed)}</span>
                 </td>
-                <td class="min-w-16">
-                    <div class="flex gap-1">
-                        <button class="btn btn-outline btn-xs tooltip"
-                                data-action="download-torrent"
-                                data-tip="Download torrent file">
+                <!-- Torrent Column (Download torrent, Download magnet, Copy magnet) -->
+                <td class="min-w-32">
+                    <div class="flex gap-1 flex-wrap">
+                        <button class="btn btn-outline btn-xs tooltip" data-action="download-torrent" data-tip="Download torrent file">
                             <i class="bi bi-file-earmark-arrow-down"></i>
+                        </button>
+                        <button class="btn btn-outline btn-xs tooltip" data-action="download-magnet" data-tip="Download magnet file">
+                            <i class="bi bi-magnet"></i>
+                        </button>
+                        <button class="btn btn-outline btn-xs tooltip" data-action="copy-magnet" data-tip="Copy magnet link">
+                            <i class="bi bi-copy"></i>
                         </button>
                     </div>
                 </td>
+                <!-- Category Column -->
                 <td class="min-w-24">
-                    ${torrent.category ?
-            `<div class="badge badge-secondary badge-sm">${this.escapeHtml(torrent.category)}</div>` :
-            '<span class="text-base-content/50">None</span>'
-        }
+                    ${torrent.category ? `<div class="badge badge-secondary badge-sm">${this.escapeHtml(torrent.category)}</div>` : '<span class="text-base-content/50">None</span>'}
                 </td>
+                <!-- Debrid Column -->
                 <td class="min-w-24">
-                    ${torrent.debrid ?
-            `<div class="badge badge-accent badge-sm">${this.escapeHtml(torrent.debrid)}</div>` :
-            '<span class="text-base-content/50">None</span>'
-        }
+                    ${torrent.debrid ? `<div class="badge badge-accent badge-sm">${this.escapeHtml(torrent.debrid)}</div>` : '<span class="text-base-content/50">None</span>'}
                 </td>
-                <td class="min-w-16 text-nowrap font-mono text-sm">
-                    ${torrent.num_seeds || 0}
+                <!-- Seeders Column -->
+                <td class="min-w-16">
+                    <span class="text-nowrap font-mono text-sm">${torrent.num_seeds || 0}</span>
                 </td>
+                <!-- State Column -->
                 <td class="min-w-20">
                     <div class="badge ${this.getStateColor(torrent.state)} badge-sm">
                         ${this.escapeHtml(torrent.state)}
                     </div>
                 </td>
+                <!-- Actions Column -->
                 <td class="w-32">
                     <div class="flex gap-1 flex-wrap">
-                        <button class="btn btn-outline btn-xs tooltip"
-                                data-action="download-magnet"
-                                data-tip="Download magnet file">
-                            <i class="bi bi-magnet"></i>
-                        </button>
-                        <button class="btn btn-outline btn-xs tooltip"
-                                data-action="copy-magnet"
-                                data-tip="Copy magnet link">
-                            <i class="bi bi-copy"></i>
-                        </button>
-                        <button class="btn btn-error btn-outline btn-xs tooltip" 
-                                data-action="delete-local"
-                                data-tip="Delete from local">
+                        <button class="btn btn-error btn-outline btn-xs tooltip" data-action="delete-local" data-tip="Delete from local">
                             <i class="bi bi-trash"></i>
                         </button>
-                        ${torrent.debrid && torrent.id ? `
-                            <button class="btn btn-error btn-outline btn-xs tooltip" 
-                                    data-action="delete-debrid"
-                                    data-tip="Remove from ${torrent.debrid}">
-                                <i class="bi bi-cloud-slash"></i>
-                            </button>
-                        ` : ''}
+                        ${torrent.debrid && torrent.id ? `<button class="btn btn-error btn-outline btn-xs tooltip" data-action="delete-debrid" data-tip="Remove from ${torrent.debrid}"><i class="bi bi-cloud-slash"></i></button>` : ''}
                     </div>
                 </td>
             </tr>
         `;
+    }
+    }
     }
 
     getStateColor(state) {
