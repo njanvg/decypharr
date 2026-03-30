@@ -404,7 +404,7 @@ class TorrentDashboard {
                     <span class="text-nowrap font-mono text-sm">${window.decypharrUtils.formatSpeed(torrent.dlspeed)}</span>
                 </td>
                 <!-- Torrent Column (Download torrent, Download magnet, Copy magnet) -->
-                <td class="min-w-32">
+                <td class="min-w-16">
                     <div class="flex gap-1 flex-wrap">
                         <button class="btn btn-outline btn-xs tooltip" data-action="download-torrent" data-tip="Download torrent file">
                             <i class="bi bi-file-earmark-arrow-down"></i>
