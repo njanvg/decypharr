@@ -380,10 +380,12 @@ class DecypharrUtils {
     // Version info
     async setupVersionInfo() {
         try {
+            console.log('[VersionInfo] Fetching version info');
             const response = await this.fetcher('/version');
             if (!response.ok) throw new Error('Failed to fetch version');
 
             const data = await response.json();
+            console.log('[VersionInfo] Received data:', data);
             const versionBadge = document.getElementById('version-badge');
 
             if (versionBadge) {
@@ -391,9 +393,15 @@ class DecypharrUtils {
                 let tooltip = `${data.channel}-${data.version}`;
                 if (data.build_number && data.build_number !== '') {
                     tooltip += `\nBuild: ${data.build_number}`;
+                    console.log('[VersionInfo] Build number found:', data.build_number);
+                } else {
+                    console.warn('[VersionInfo] No build_number in response');
                 }
                 if (data.branch && data.branch !== '') {
                     tooltip += `\nBranch: ${data.branch}`;
+                    console.log('[VersionInfo] Branch found:', data.branch);
+                } else {
+                    console.warn('[VersionInfo] No branch in response');
                 }
 
                 versionBadge.innerHTML = `
@@ -416,7 +424,7 @@ class DecypharrUtils {
                 }
             }
         } catch (error) {
-            console.error('Error fetching version:', error);
+            console.error('[VersionInfo] Error fetching version:', error);
             const versionBadge = document.getElementById('version-badge');
             if (versionBadge) {
                 versionBadge.textContent = 'Unknown';

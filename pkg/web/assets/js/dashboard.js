@@ -1,6 +1,7 @@
 // Dashboard functionality for torrent management
 class TorrentDashboard {
     constructor() {
+        console.log('[Dashboard] Constructor called');
         this.state = {
             torrents: [],
             selectedTorrents: new Set(),
@@ -30,6 +31,9 @@ class TorrentDashboard {
             paginationInfo: document.getElementById('paginationInfo'),
             emptyState: document.getElementById('emptyState')
         };
+        
+        console.log('[Dashboard] searchInput ref:', this.refs.searchInput);
+        console.log('[Dashboard] All refs:', Object.keys(this.refs).map(k => k + ': ' + (this.refs[k] ? 'found' : 'NOT FOUND')).join(', '));
 
         this.init();
     }
@@ -41,6 +45,7 @@ class TorrentDashboard {
     }
 
     bindEvents() {
+        console.log('[Dashboard] bindEvents called');
         // Refresh button
         this.refs.refreshBtn.addEventListener('click', () => this.loadTorrents());
 
@@ -51,24 +56,18 @@ class TorrentDashboard {
         // Select all checkbox
         this.refs.selectAll.addEventListener('change', (e) => this.toggleSelectAll(e.target.checked));
 
-        // Search input - with better error handling and debugging
-        setTimeout(() => {
-            const searchInput = document.getElementById('searchInput');
-            console.log('[Dashboard] Searching for searchInput element:', searchInput);
-            
-            if (searchInput) {
-                console.log('[Dashboard] searchInput found, attaching event listener');
-                searchInput.addEventListener('input', (e) => {
-                    console.log('[Dashboard] Search input event fired, value:', e.target.value);
-                    this.state.searchTerm = e.target.value;
-                    console.log('[Dashboard] searchTerm updated to:', this.state.searchTerm);
-                    this.state.currentPage = 1;
-                    this.updateUI();
-                });
-            } else {
-                console.warn('[Dashboard] searchInput element not found!');
-            }
-        }, 100);
+        // Search input - attach immediately without setTimeout
+        if (this.refs.searchInput) {
+            console.log('[Dashboard] Attaching search input listener');
+            this.refs.searchInput.addEventListener('input', (e) => {
+                console.log('[Dashboard] Search input changed to:', e.target.value);
+                this.state.searchTerm = e.target.value;
+                this.state.currentPage = 1;
+                this.updateUI();
+            });
+        } else {
+            console.error('[Dashboard] searchInput not found!');
+        }
 
         // Filters
         this.refs.categoryFilter.addEventListener('change', (e) => this.setFilter('category', e.target.value));
