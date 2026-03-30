@@ -689,7 +689,17 @@ class TorrentDashboard {
         try {
             const response = await window.decypharrUtils.fetcher(url, { method: 'GET' });
             if (!response.ok) {
-                const errorText = await response.text();
+                let errorText = '';
+                const contentType = response.headers.get('Content-Type') || '';
+
+                if (contentType.includes('application/json')) {
+                    const body = await response.json().catch(() => null);
+                    errorText = body?.error || body?.message || JSON.stringify(body || '');
+                } else {
+                    errorText = await response.text();
+                }
+
+                errorText = errorText?.trim() || response.statusText || `HTTP ${response.status}`;
                 window.decypharrUtils.createToast(`Failed to download torrent: ${errorText}`, 'error');
                 return;
             }
