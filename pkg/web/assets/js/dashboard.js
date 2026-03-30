@@ -51,15 +51,22 @@ class TorrentDashboard {
         // Select all checkbox
         this.refs.selectAll.addEventListener('change', (e) => this.toggleSelectAll(e.target.checked));
 
-        // Search input - with better error handling
+        // Search input - with better error handling and debugging
         setTimeout(() => {
             const searchInput = document.getElementById('searchInput');
+            console.log('[Dashboard] Searching for searchInput element:', searchInput);
+            
             if (searchInput) {
+                console.log('[Dashboard] searchInput found, attaching event listener');
                 searchInput.addEventListener('input', (e) => {
+                    console.log('[Dashboard] Search input event fired, value:', e.target.value);
                     this.state.searchTerm = e.target.value;
+                    console.log('[Dashboard] searchTerm updated to:', this.state.searchTerm);
                     this.state.currentPage = 1;
                     this.updateUI();
                 });
+            } else {
+                console.warn('[Dashboard] searchInput element not found!');
             }
         }, 100);
 
@@ -222,6 +229,7 @@ class TorrentDashboard {
     }
 
     updateUI() {
+        console.log('[Dashboard] updateUI called');
         // Filter torrents
         this.filterTorrents();
 
@@ -229,6 +237,7 @@ class TorrentDashboard {
         this.updateCategoryFilter();
 
         // Render torrents table
+        console.log('[Dashboard] About to render', this.state.filteredTorrents.length, 'filtered torrents');
         this.renderTorrents();
 
         // Update pagination
@@ -242,29 +251,42 @@ class TorrentDashboard {
     }
 
     filterTorrents() {
+        console.log('[Dashboard] filterTorrents called, current searchTerm:', this.state.searchTerm);
         let filtered = [...this.state.torrents];
+        console.log('[Dashboard] Starting with', filtered.length, 'torrents');
 
         // Search filter with better null/undefined handling
         const searchTerm = (this.state.searchTerm || '').trim().toLowerCase();
         if (searchTerm.length > 0) {
+            console.log('[Dashboard] Applying search filter for term:', searchTerm);
             filtered = filtered.filter(t => {
                 const name = (t.name || '').toLowerCase();
-                return name.includes(searchTerm);
+                const match = name.includes(searchTerm);
+                if (match) {
+                    console.log('[Dashboard] Match found:', t.name);
+                }
+                return match;
             });
+            console.log('[Dashboard] After search filter:', filtered.length, 'matches');
         }
 
         // Category filter
         if (this.state.selectedCategory) {
+            console.log('[Dashboard] Applying category filter:', this.state.selectedCategory);
             filtered = filtered.filter(t => t.category === this.state.selectedCategory);
+            console.log('[Dashboard] After category filter:', filtered.length, 'items');
         }
 
         // State filter
         if (this.state.selectedState) {
+            console.log('[Dashboard] Applying state filter:', this.state.selectedState);
             filtered = filtered.filter(t => (t.state || '').toLowerCase() === this.state.selectedState.toLowerCase());
+            console.log('[Dashboard] After state filter:', filtered.length, 'items');
         }
 
         // Sort torrents
         filtered = this.sortTorrents(filtered);
+        console.log('[Dashboard] After sorting:', filtered.length, 'items');
 
         this.state.filteredTorrents = filtered;
     }
