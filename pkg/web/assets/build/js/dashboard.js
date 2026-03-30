@@ -304,6 +304,7 @@ class TorrentDashboard {
                 data-name="${this.escapeHtml(torrent.name)}" 
                 data-category="${this.escapeHtml(torrent.category || '')}"
                 data-magnet-uri="${this.escapeHtml(magnetUri)}"
+                data-has-torrent-path="${torrent.TorrentPath?"true":"false"}"
                 class="hover:bg-base-200 transition-colors">
                 <td>
                     <label class="cursor-pointer">
@@ -654,9 +655,29 @@ class TorrentDashboard {
         }
 
         try {
-            await navigator.clipboard.writeText(magnetUri);
+            if (navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(magnetUri);
+            } else {
+                const textarea = document.createElement('textarea');
+                textarea.value = magnetUri;
+                textarea.style.position = 'fixed';
+                textarea.style.left = '-9999px';
+                textarea.style.top = '0';
+                textarea.setAttribute('readonly', '');
+                document.body.appendChild(textarea);
+                textarea.focus();
+                textarea.select();
+
+                if (!document.execCommand('copy')) {
+                    throw new Error('Clipboard API not available');
+                }
+
+                document.body.removeChild(textarea);
+            }
+
             window.decypharrUtils.createToast('Magnet link copied to clipboard');
         } catch (error) {
+            console.error('Failed to copy magnet link:', error);
             window.decypharrUtils.createToast(this.formatErrorMessage('Failed to copy magnet link', error), 'error');
         }
     }
@@ -672,12 +693,14 @@ class TorrentDashboard {
                 return;
             }
 
+            const contentType = response.headers.get('Content-Type') || '';
+            const isMagnetFallback = contentType.includes('text/plain');
             const blob = await response.blob();
             const safeName = (name || hash || 'torrent')
                 .replace(/[<>:"/\\|?*\x00-\x1F]/g, '_')
                 .trim()
                 .slice(0, 120);
-            const fileName = `${safeName || 'torrent'}.torrent`;
+            const fileName = `${safeName || 'torrent'}${isMagnetFallback ? '.magnet' : '.torrent'}`;
             const downloadUrl = URL.createObjectURL(blob);
             const anchor = document.createElement('a');
             anchor.href = downloadUrl;
@@ -686,7 +709,7 @@ class TorrentDashboard {
             anchor.click();
             anchor.remove();
             URL.revokeObjectURL(downloadUrl);
-            window.decypharrUtils.createToast('Torrent file downloaded');
+            window.decypharrUtils.createToast(isMagnetFallback ? 'Magnet file downloaded' : 'Torrent file downloaded');
         } catch (error) {
             console.error('Error downloading torrent file:', error);
             window.decypharrUtils.createToast(this.formatErrorMessage('Failed to download torrent file', error), 'error');

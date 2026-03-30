@@ -181,12 +181,59 @@ func (wb *Web) handleDownloadTorrent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if torrent.TorrentPath == "" {
-		http.Error(w, "Torrent content path not available", http.StatusBadRequest)
+	contentPath := strings.TrimSpace(torrent.TorrentPath)
+	if contentPath == "" {
+		contentPath = strings.TrimSpace(torrent.ContentPath)
+	}
+
+	if contentPath != "" {
+		data, err := utils.CreateTorrentFileFromPath(contentPath, torrent.Name, torrent.MagnetUri)
+		if err != nil {
+			wb.logger.Error().Err(err).Str("hash", hash).Msg("Failed to build torrent file")
+			http.Error(w, fmt.Sprintf("Failed to build torrent file: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		fileName := torrent.Name
+		if fileName == "" {
+			fileName = hash
+		}
+		fileName = strings.TrimSpace(fileName)
+		if fileName == "" {
+			fileName = "torrent"
+		}
+		w.Header().Set("Content-Type", "application/x-bittorrent")
+		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", fileName+".torrent"))
+		w.Header().Set("Content-Length", strconv.Itoa(len(data)))
+		_, _ = w.Write(data)
 		return
 	}
 
-	data, err := utils.CreateTorrentFileFromPath(torrent.TorrentPath, torrent.Name, torrent.MagnetUri)
+	if strings.TrimSpace(torrent.MagnetUri) == "" {
+		http.Error(w, "Torrent content path and magnet URI not available", http.StatusBadRequest)
+		return
+	}
+
+	magnetUri := strings.TrimSpace(torrent.MagnetUri)
+	if magnetUri == "" {
+		http.Error(w, "Torrent content path and magnet URI not available", http.StatusBadRequest)
+		return
+	}
+
+	fileName := torrent.Name
+	if fileName == "" {
+		fileName = torrent.Hash
+	}
+	fileName = strings.TrimSpace(fileName)
+	if fileName == "" {
+		fileName = "torrent"
+	}
+
+	w.Header().Set("Content-Type", "text/plain;charset=utf-8")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", fileName+".magnet"))
+	w.Header().Set("Content-Length", strconv.Itoa(len(magnetUri)+1))
+	_, _ = w.Write([]byte(magnetUri + "\n"))
+	return
 	if err != nil {
 		wb.logger.Error().Err(err).Str("hash", hash).Msg("Failed to build torrent file")
 		http.Error(w, fmt.Sprintf("Failed to build torrent file: %v", err), http.StatusInternalServerError)
