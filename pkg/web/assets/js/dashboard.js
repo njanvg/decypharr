@@ -364,14 +364,12 @@ class TorrentDashboard {
                                 data-tip="Download magnet file">
                             <i class="bi bi-magnet"></i>
                         </button>
+                        <button class="btn btn-outline btn-xs tooltip"
+                                data-action="copy-magnet"
+                                data-tip="Copy magnet link">
+                            <i class="bi bi-copy"></i>
+                        </button>
                     </div>
-                </td>
-                <td>
-                    <button class="btn btn-outline btn-xs tooltip"
-                            data-action="copy-magnet"
-                            data-tip="Copy magnet link">
-                        <i class="bi bi-copy"></i>
-                    </button>
                 </td>
                 <td>
                     <div class="flex gap-1">
@@ -643,6 +641,11 @@ class TorrentDashboard {
         return magnetUri;
     }
 
+    formatErrorMessage(base, error) {
+        const details = error?.stack || error?.message || String(error);
+        return `${base}\n${details}`;
+    }
+
     async copyMagnet(hash, rawMagnet) {
         const magnetUri = this.normalizeMagnetUri(rawMagnet, hash);
         if (!magnetUri) {
@@ -654,7 +657,7 @@ class TorrentDashboard {
             await navigator.clipboard.writeText(magnetUri);
             window.decypharrUtils.createToast('Magnet link copied to clipboard');
         } catch (error) {
-            window.decypharrUtils.createToast('Failed to copy magnet link', 'error');
+            window.decypharrUtils.createToast(this.formatErrorMessage('Failed to copy magnet link', error), 'error');
         }
     }
 
@@ -687,7 +690,7 @@ class TorrentDashboard {
             window.decypharrUtils.createToast('Torrent file downloaded');
         } catch (error) {
             console.error('Error downloading torrent file:', error);
-            window.decypharrUtils.createToast('Failed to download torrent file', 'error');
+            window.decypharrUtils.createToast(this.formatErrorMessage('Failed to download torrent file', error), 'error');
         }
     }
 
@@ -712,5 +715,6 @@ class TorrentDashboard {
         anchor.click();
         anchor.remove();
         URL.revokeObjectURL(url);
+        window.decypharrUtils.createToast('Magnet file downloaded');
     }
 }
